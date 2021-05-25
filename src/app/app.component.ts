@@ -1,7 +1,12 @@
 import { SearchService, Information } from './services/search.service';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
-import { debounceTime, distinctUntilChanged, map, takeUntil } from 'rxjs/operators';
+import {
+  debounceTime,
+  distinctUntilChanged,
+  map,
+  takeUntil,
+} from 'rxjs/operators';
 import { Subject } from 'rxjs';
 
 @Component({
@@ -47,7 +52,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   get getValues(): FormValues {
     return {
-      searchWord: this.form.get('searchWord')?.value?.trim(),
+      searchWord: this.form.get('searchWord')?.value?.trim().toLowerCase(),
       replaceWord: this.form.get('replaceWord')?.value,
     };
   }
@@ -61,18 +66,21 @@ export class AppComponent implements OnInit, OnDestroy {
       });
   }
 
-  // version with removing highlights
   replaceOne(): void {
     for (let i = 0; i < this.results.length; i++) {
       if (
-        this.results[i].snippet.includes(
-          `<span class="searchmatch">${this.getValues.searchWord}</span>`
-        )
+        this.results[i].snippet
+          .toLowerCase()
+          .includes(
+            `<span class="searchmatch">${this.getValues.searchWord}</span>`
+          )
       ) {
-        this.results[i].snippet = this.results[i].snippet.replace(
-          `<span class="searchmatch">${this.getValues.searchWord}</span>`,
-          this.getValues.replaceWord
-        );
+        this.results[i].snippet = this.results[i].snippet
+          .toLowerCase()
+          .replace(
+            `<span class="searchmatch">${this.getValues.searchWord}</span>`,
+            this.getValues.replaceWord
+          );
         break;
       }
     }
@@ -82,6 +90,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.results = this.results.map((information) => {
       return {
         snippet: information.snippet
+          .toLowerCase()
           .split(
             `<span class="searchmatch">${this.getValues.searchWord}</span>`
           )
@@ -90,38 +99,6 @@ export class AppComponent implements OnInit, OnDestroy {
       };
     });
   }
-
-  // version without removing highlights
-  // replaceOne(): void {
-  //   for (let i = 0; i < this.results.length; i++) {
-  //     if (
-  //       this.results[i].snippet.includes(
-  //         `<span class="searchmatch">${this.getValues.searchWord}</span>`
-  //       )
-  //     ) {
-  //       this.results[i].snippet = this.results[i].snippet.replace(
-  //         this.getValues.searchWord,
-  //         this.getValues.replaceWord
-  //       );
-  //       break;
-  //     }
-  //   }
-  // }
-
-  // replaceAll(): void {
-  //   this.results = this.results.map((information) => {
-  //     return {
-  //       snippet: information.snippet
-  //         .split(
-  //           `<span class="searchmatch">${this.getValues.searchWord}</span>`
-  //         )
-  //         .join(
-  //           `<span class="searchmatch">${this.getValues.replaceWord}</span>`
-  //         ),
-  //       title: information.title,
-  //     };
-  //   });
-  // }
 }
 
 interface FormValues {
