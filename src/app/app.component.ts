@@ -1,7 +1,7 @@
 import { SearchService, Information } from './services/search.service';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
-import { debounceTime, takeUntil } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, map, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 
 @Component({
@@ -24,7 +24,12 @@ export class AppComponent implements OnInit, OnDestroy {
     this.initForm();
     this.form
       .get('searchWord')
-      ?.valueChanges.pipe(debounceTime(500), takeUntil(this.unsubscribe$))
+      ?.valueChanges.pipe(
+        map((value) => value.trim()),
+        distinctUntilChanged(),
+        debounceTime(500),
+        takeUntil(this.unsubscribe$)
+      )
       .subscribe(() => this.search());
   }
 
@@ -42,7 +47,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   get getValues(): FormValues {
     return {
-      searchWord: this.form.get('searchWord')?.value,
+      searchWord: this.form.get('searchWord')?.value?.trim(),
       replaceWord: this.form.get('replaceWord')?.value,
     };
   }

@@ -10,8 +10,8 @@
   <button type="button" (click)="replaceAll()">replace all</button>
 </form>
 
-<li>
+<ol>
   <div *ngFor="let item of results">
-    <ol [innerHtml]="item.title  + ': ' + item.snippet"></ol>
+    <li [innerHtml]="item.title  + ': ' + item.snippet"></li>
   </div>
-</li>
+</ol>
