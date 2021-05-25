@@ -1,16 +1,19 @@
 import { SearchService, Information } from './services/search.service';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
-import { debounceTime, throttle, throttleTime } from 'rxjs/operators';
+import { debounceTime, takeUntil } from 'rxjs/operators';
+import { Subject } from 'rxjs';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, OnDestroy {
   public results: Information[] = [];
   public form: FormGroup;
+
+  private unsubscribe$ = new Subject();
 
   constructor(
     private searchService: SearchService,
@@ -21,22 +24,102 @@ export class AppComponent implements OnInit {
     this.initForm();
     this.form
       .get('searchWord')
-      ?.valueChanges.pipe(debounceTime(500))
-      .subscribe((value) => this.search());
+      ?.valueChanges.pipe(debounceTime(500), takeUntil(this.unsubscribe$))
+      .subscribe(() => this.search());
   }
 
-  initForm() {
+  ngOnDestroy(): void {
+    this.unsubscribe$.next();
+    this.unsubscribe$.complete();
+  }
+
+  initForm(): void {
     this.form = this.formBuilder.group({
       searchWord: '',
       replaceWord: '',
     });
   }
 
-  search() {
+  get getValues(): FormValues {
+    return {
+      searchWord: this.form.get('searchWord')?.value,
+      replaceWord: this.form.get('replaceWord')?.value,
+    };
+  }
+
+  search(): void {
     this.searchService
       .search(this.form.get('searchWord')?.value)
+      .pipe(takeUntil(this.unsubscribe$))
       .subscribe((res) => {
         this.results = res;
       });
   }
+
+  // version with removing highlights
+  replaceOne(): void {
+    for (let i = 0; i < this.results.length; i++) {
+      if (
+        this.results[i].snippet.includes(
+          `<span class="searchmatch">${this.getValues.searchWord}</span>`
+        )
+      ) {
+        this.results[i].snippet = this.results[i].snippet.replace(
+          `<span class="searchmatch">${this.getValues.searchWord}</span>`,
+          this.getValues.replaceWord
+        );
+        break;
+      }
+    }
+  }
+
+  replaceAll(): void {
+    this.results = this.results.map((information) => {
+      return {
+        snippet: information.snippet
+          .split(
+            `<span class="searchmatch">${this.getValues.searchWord}</span>`
+          )
+          .join(this.getValues.replaceWord),
+        title: information.title,
+      };
+    });
+  }
+
+  // version without removing highlights
+  // replaceOne(): void {
+  //   for (let i = 0; i < this.results.length; i++) {
+  //     if (
+  //       this.results[i].snippet.includes(
+  //         `<span class="searchmatch">${this.getValues.searchWord}</span>`
+  //       )
+  //     ) {
+  //       this.results[i].snippet = this.results[i].snippet.replace(
+  //         this.getValues.searchWord,
+  //         this.getValues.replaceWord
+  //       );
+  //       break;
+  //     }
+  //   }
+  // }
+
+  // replaceAll(): void {
+  //   this.results = this.results.map((information) => {
+  //     return {
+  //       snippet: information.snippet
+  //         .split(
+  //           `<span class="searchmatch">${this.getValues.searchWord}</span>`
+  //         )
+  //         .join(
+  //           `<span class="searchmatch">${this.getValues.replaceWord}</span>`
+  //         ),
+  //       title: information.title,
+  //     };
+  //   });
+  // }
+}
+
+interface FormValues {
+  searchWord: string;
+  replaceWord: string;
 }

@@ -1,25 +1,17 @@
-<form [formGroup]=form>
+<form [formGroup]="form">
   <label>search phrase</label>
-  <input formControlName="searchWord"/>
+  <input formControlName="searchWord" />
   <br />
   <label>replace with</label>
-  <input formControlName="replaceWord"/>
+  <input formControlName="replaceWord" />
   <br />
   <button type="button" (click)="search()">search</button>
-  <button type="button">replace</button>
-  <button type="button">replace all</button>
+  <button type="button" (click)="replaceOne()">replace</button>
+  <button type="button" (click)="replaceAll()">replace all</button>
 </form>
 
 <li>
   <div *ngFor="let item of results">
-    <ol>
-      {{
-        item.title
-      }}
-      :
-      {{
-        item.snippet
-      }}
-    </ol>
+    <ol [innerHtml]="item.title  + ': ' + item.snippet"></ol>
   </div>
 </li>
